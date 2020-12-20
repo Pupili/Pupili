@@ -7,7 +7,7 @@ const client = new PupiliClient({
 	google: {
 		clientId: process.env.GOOGLE_CLIENT_ID!,
 		clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-		redirects: ['some_redirect'],
+		redirects: process.env.GOOGLE_CLIENT_REDIRECTS?.split(',')!,
 	},
 	redis: {
 		ip: process.env.REDIS_IP!,
