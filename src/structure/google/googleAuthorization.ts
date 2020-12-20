@@ -27,7 +27,7 @@ export class GoogleAuthorization {
 		});
 	}
 
-	async isAuthorized(user: User) {
+	isAuthorized(user: User) {
 		let isAuthorized = false;
 		this.redisClient.get(`auth-${user.id}`, (err, tokenString) => {
 			if (err) throw new Error(`Error while checking authorization -- ${err}`);
