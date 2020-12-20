@@ -2,14 +2,16 @@ import { ListenerHandler } from 'discord-akairo';
 import { CommandHandler } from 'discord-akairo';
 import { AkairoClient } from 'discord-akairo';
 import { createClient, RedisClient } from 'redis';
-import { GoogleAuthorization } from '../structure/google/googleAuthorization';
+import { GoogleAuthorization } from '../structure/google/auth/googleAuthorization';
+import { init } from '../structure/google/auth/server/server';
 import { PupiliClientOptions } from './pupiliClientOptions';
 
 export class PupiliClient extends AkairoClient {
 	commandHandler: CommandHandler;
 	listenerHandler: ListenerHandler;
 
-	redisClient: RedisClient;
+	redisPublisherClient: RedisClient;
+	redisSubscriberClient: RedisClient;
 
 	googleAuthorization: GoogleAuthorization;
 
@@ -23,15 +25,22 @@ export class PupiliClient extends AkairoClient {
 			}
 		);
 
-		this.redisClient = createClient({
+		this.redisPublisherClient = createClient({
+			host: options.redis.ip,
+			port: options.redis.port,
+		});
+
+		this.redisSubscriberClient = createClient({
 			host: options.redis.ip,
 			port: options.redis.port,
 		});
 
 		this.googleAuthorization = new GoogleAuthorization(
 			options.google,
-			this.redisClient
+			this.redisPublisherClient
 		);
+
+		init();
 
 		this.listenerHandler = new ListenerHandler(this, {
 			directory: './src/listener',
@@ -40,6 +49,10 @@ export class PupiliClient extends AkairoClient {
 		this.commandHandler = new CommandHandler(this, {
 			directory: './src/command',
 			prefix: '!',
+		});
+
+		this.listenerHandler.setEmitters({
+			'redis': this.redisSubscriberClient
 		});
 
 		this.commandHandler.useListenerHandler(this.listenerHandler);
@@ -57,7 +70,8 @@ declare module 'discord-akairo' {
 	interface AkairoClient {
 		commandHandler: CommandHandler;
 		listenerHandler: ListenerHandler;
-		redisClient: RedisClient;
+		redisSubscriberClient: RedisClient;
+		redisPublisherClient: RedisClient;
 		googleAuthorization: GoogleAuthorization;
 	}
 }

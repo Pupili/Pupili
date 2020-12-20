@@ -2,7 +2,7 @@ import { PupiliClient } from './client/pupiliClient';
 
 require('dotenv').config();
 
-const client = new PupiliClient({
+export const client = new PupiliClient({
 	owners: process.env.OWNER_IDS?.split(',')!,
 	google: {
 		clientId: process.env.GOOGLE_CLIENT_ID!,
