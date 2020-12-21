@@ -4,6 +4,7 @@ import { AkairoClient } from 'discord-akairo';
 import { createClient, RedisClient } from 'redis';
 import { GoogleAuthorization } from '../structure/google/auth/googleAuthorization';
 import { init } from '../structure/google/auth/server/server';
+import { OAuthRefreshScheduler } from '../structure/scheduler/oAuthRefreshScheduler';
 import { PupiliClientOptions } from './pupiliClientOptions';
 
 export class PupiliClient extends AkairoClient {
@@ -14,6 +15,8 @@ export class PupiliClient extends AkairoClient {
 	redisSubscriberClient: RedisClient;
 
 	googleAuthorization: GoogleAuthorization;
+
+	oAuthRefreshScheduler: OAuthRefreshScheduler;
 
 	constructor(options: PupiliClientOptions) {
 		super(
@@ -36,11 +39,16 @@ export class PupiliClient extends AkairoClient {
 		});
 
 		this.googleAuthorization = new GoogleAuthorization(
+			this,
 			options.google,
 			this.redisPublisherClient
 		);
 
 		init();
+
+		this.oAuthRefreshScheduler = new OAuthRefreshScheduler(
+			this.googleAuthorization
+		);
 
 		this.listenerHandler = new ListenerHandler(this, {
 			directory: './src/listener',
@@ -52,7 +60,7 @@ export class PupiliClient extends AkairoClient {
 		});
 
 		this.listenerHandler.setEmitters({
-			'redis': this.redisSubscriberClient
+			redis: this.redisSubscriberClient,
 		});
 
 		this.commandHandler.useListenerHandler(this.listenerHandler);
@@ -73,5 +81,6 @@ declare module 'discord-akairo' {
 		redisSubscriberClient: RedisClient;
 		redisPublisherClient: RedisClient;
 		googleAuthorization: GoogleAuthorization;
+		oAuthRefreshScheduler: OAuthRefreshScheduler;
 	}
 }
