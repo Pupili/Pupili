@@ -1,9 +1,9 @@
 import { Listener } from 'discord-akairo';
 import { TextChannel } from 'discord.js';
 
-export default class RedisSubscriptionMessageListener extends Listener {
+export default class AuthMessagedReceivedListener extends Listener {
 	constructor() {
-		super('redisSubscriptionMessage', {
+		super('authMessageReceived', {
 			emitter: 'redis',
 			event: 'message'
 		});
