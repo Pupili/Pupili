@@ -3,13 +3,6 @@ import { PupiliClient } from './client/pupiliClient';
 
 require('dotenv').config();
 
-(async() => {
-	await mongoose.connect(process.env.MONGO_URI || '', {
-		useNewUrlParser: true,
-		useUnifiedTopology: true
-	});
-})();
-
 export const client = new PupiliClient({
 	owners: process.env.OWNER_IDS?.split(',') || [],
 	google: {
@@ -23,4 +16,11 @@ export const client = new PupiliClient({
 	},
 });
 
-client.start(process.env.BOT_TOKEN || '');
+(async() => {
+	await mongoose.connect(process.env.MONGO_URI || '', {
+		useNewUrlParser: true,
+		useUnifiedTopology: true
+	});
+	
+	await client.start(process.env.BOT_TOKEN || '');
+})();

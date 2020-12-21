@@ -69,8 +69,9 @@ export class PupiliClient extends AkairoClient {
 		this.commandHandler.loadAll();
 	}
 
-	start(token: string) {
-		this.login(token);
+	async start(token: string) {
+		await this.login(token);
+		await this.oAuthRefreshScheduler.refreshScheduler();
 	}
 }
 
