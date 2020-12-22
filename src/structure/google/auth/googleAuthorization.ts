@@ -64,5 +64,6 @@ export class GoogleAuthorization {
 		this.oAuth2Client.credentials = dbUser!.authCredentials!;
 		await this.oAuth2Client.revokeCredentials();
 		await dbUser.remove();
+		await this.client.oAuthRefreshScheduler.refreshScheduler();
 	}
 }
