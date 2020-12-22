@@ -20,7 +20,7 @@ export class MessageStore {
 		this.user = user;
 	}
 
-	getMessageStoreForUser(this: MessageStore, callback: (msg: StoredMessage | null) => void) {
+	getMessageStoreForUser(callback: (msg: StoredMessage | null) => void) {
 		this.redisClient.get(`messageStore-${this.user.id}`, (err, str) => {
 			if (err)
 				throw new Error(
