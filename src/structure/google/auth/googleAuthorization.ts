@@ -57,4 +57,12 @@ export class GoogleAuthorization {
 		await this.client.oAuthRefreshScheduler.refreshScheduler();
 		this.redisClient.publish('auth', user.id);
 	}
+
+	async unauthorizeUser(user: User) {
+		const dbUser = await UserModel.findUserByID(user.id);
+		if (!dbUser || !dbUser.authCredentials) throw new Error('Could not get auth credentials for user');
+		this.oAuth2Client.credentials = dbUser!.authCredentials!;
+		await this.oAuth2Client.revokeCredentials();
+		await dbUser.remove();
+	}
 }

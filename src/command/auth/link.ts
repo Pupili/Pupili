@@ -2,7 +2,7 @@ import { Command } from 'discord-akairo';
 import { MessageEmbed } from 'discord.js';
 import { Message } from 'discord.js';
 import { UserModel } from '../../model/user';
-import { TextChannel } from 'discord.js';
+import { MessageStore } from '../../structure/store/messageStore';
 
 export default class LinkCommand extends Command {
 	constructor() {
@@ -12,7 +12,7 @@ export default class LinkCommand extends Command {
 	}
 
 	async exec(msg: Message) {
-		const user = await UserModel.findOne({ userId: msg.author.id }).exec();
+		const user = await UserModel.findUserByID(msg.author.id);
 		if (user && user.authCredentials)
 			return msg.channel.send(':x: User is already authorized.');
 
@@ -31,31 +31,22 @@ export default class LinkCommand extends Command {
 			{ embed: embed }
 		);
 
-		this.client.redisPublisherClient.get(
-			`messageStore-${msg.author.id}`,
-			async (err, outMessageString) => {
-				if (err) throw new Error(`Could not retrieve message storage - ${err}`);
-				if (outMessageString) {
-					const outMessage: { channel: string; id: string } = JSON.parse(
-						outMessageString
-					);
-					const resolvedChannel = this.client.channels.resolve(
-						outMessage.channel
-					) as TextChannel;
-					const fetchedMessage = await resolvedChannel.messages.fetch(
-						outMessage.id
-					);
-					if (fetchedMessage)
-						fetchedMessage.edit(':x: Could not authorize.', { embed: null });
-				}
-				this.client.redisPublisherClient.set(
-					`messageStore-${msg.author.id}`,
-					JSON.stringify({
-						channel: outputMessage.channel.id,
-						id: outputMessage.id,
-					})
-				);
-			}
+		const messageStore = new MessageStore(
+			this.client,
+			this.client.redisPublisherClient,
+			msg.author
 		);
+
+		messageStore.getMessageStoreForUser(async _msg => {
+			if (_msg) {
+				const fetchedMessage = await messageStore.fetchMessageFromMessageStore();
+				if (fetchedMessage) 
+					fetchedMessage.edit(':x: Could not authorize.', { embed: null });
+			}
+			messageStore.setMessageStoreForUser({
+				channel: outputMessage.channel.id,
+				id: outputMessage.id,
+			});
+		});
 	}
 }
