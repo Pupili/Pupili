@@ -29,9 +29,12 @@ export class OAuthRefreshScheduler {
 	}
 
 	refreshToken(u: DocumentType<User>) {
-		this.googleAuthorization.oAuth2Client.credentials.refresh_token =
-			u.authCredentials.refresh_token;
-		this.googleAuthorization.oAuth2Client.refreshAccessToken(
+		const oAuth2Client = this.googleAuthorization.buildOAuth2ClientFromOpts();
+		console.log(`Refreshing token for ${u.userId}...`);
+		oAuth2Client.setCredentials({
+			refresh_token: u.authCredentials.refresh_token
+		});
+		oAuth2Client.refreshAccessToken(
 			async (err, tokens) => {
 				if (err || !tokens)
 					throw new Error(

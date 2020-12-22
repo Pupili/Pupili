@@ -1,5 +1,5 @@
 import { User } from 'discord.js';
-import { google, Auth } from 'googleapis';
+import { google } from 'googleapis';
 import { RedisClient } from 'redis';
 import { PupiliClient } from '../../../client/pupiliClient';
 import { PupiliClientOptions } from '../../../client/pupiliClientOptions';
@@ -8,7 +8,6 @@ import { GOOGLE_API_SCOPES } from '../../../util/constants';
 
 export class GoogleAuthorization {
 	client: PupiliClient;
-	oAuth2Client: Auth.OAuth2Client;
 	oAuth2Options: PupiliClientOptions['google'];
 	redisClient: RedisClient;
 
@@ -18,17 +17,20 @@ export class GoogleAuthorization {
 		redisClient: RedisClient
 	) {
 		this.client = client;
-		this.oAuth2Client = new google.auth.OAuth2({
-			clientId: oAuthOptions.clientId,
-			clientSecret: oAuthOptions.clientSecret,
-			redirectUri: oAuthOptions.redirects[0],
-		});
 		this.oAuth2Options = oAuthOptions;
 		this.redisClient = redisClient;
 	}
 
+	buildOAuth2ClientFromOpts() {
+		return new google.auth.OAuth2({
+			clientId: this.oAuth2Options.clientId,
+			clientSecret: this.oAuth2Options.clientSecret,
+			redirectUri: this.oAuth2Options.redirects[0],
+		});
+	}
+
 	generateAuthorizationURL(user: User) {
-		return `${this.oAuth2Client.generateAuthUrl({
+		return `${this.buildOAuth2ClientFromOpts().generateAuthUrl({
 			access_type: 'offline',
 			scope: GOOGLE_API_SCOPES,
 			redirect_uri: `${this.oAuth2Options.redirects[0]}`,
@@ -47,8 +49,10 @@ export class GoogleAuthorization {
 	}
 
 	async authorizeUser(user: User, authCode: string) {
-		const token = await this.oAuth2Client.getToken(authCode);
-		this.oAuth2Client.setCredentials(token.tokens);
+		const oAuth2Client = this.buildOAuth2ClientFromOpts();
+		const token = await oAuth2Client.getToken(authCode);
+		console.log(token);
+		oAuth2Client.setCredentials(token.tokens);
 		const doc = await UserModel.create({
 			userId: user.id,
 			authCredentials: token.tokens,
@@ -62,8 +66,12 @@ export class GoogleAuthorization {
 		const dbUser = await UserModel.findUserByID(user.id);
 		if (!dbUser || !dbUser.authCredentials)
 			throw new Error('Could not get auth credentials for user');
-		this.oAuth2Client.credentials = dbUser!.authCredentials!;
-		await this.oAuth2Client.revokeCredentials();
+		const oAuth2Client = this.buildOAuth2ClientFromOpts();
+		oAuth2Client.setCredentials(dbUser.authCredentials);
+		await oAuth2Client.revokeCredentials()
+			.catch((err) => {
+				console.log(`Could not revoke access token, removing anyways... ${err}`);
+			});
 		await dbUser.remove();
 		await this.client.oAuthRefreshScheduler.refreshScheduler();
 	}
