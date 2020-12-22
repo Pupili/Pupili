@@ -40,6 +40,7 @@ export class OAuthRefreshScheduler {
 				await u.updateOne({
 					authCredentials: tokens,
 				});
+				this.refreshScheduler();
 			}
 		);
 	}
