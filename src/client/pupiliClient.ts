@@ -83,7 +83,7 @@ declare module 'discord-akairo' {
 		redisPublisherClient: RedisClient;
 		googleAuthorization: GoogleAuthorization;
 		oAuthRefreshScheduler: OAuthRefreshScheduler;
-		
+
 		start(token: string): Promise<void>;
 	}
 }

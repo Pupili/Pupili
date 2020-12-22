@@ -40,7 +40,7 @@ export default class LinkCommand extends Command {
 		messageStore.getMessageStoreForUser(async _msg => {
 			if (_msg) {
 				const fetchedMessage = await messageStore.fetchMessageFromMessageStore();
-				if (fetchedMessage) 
+				if (fetchedMessage)
 					fetchedMessage.edit(':x: Could not authorize.', { embed: null });
 			}
 			messageStore.setMessageStoreForUser({
