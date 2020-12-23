@@ -2,6 +2,7 @@ import { Command } from 'discord-akairo';
 import { MessageEmbed } from 'discord.js';
 import { Message } from 'discord.js';
 import { UserModel } from '../../model/user';
+import { MessageStatus } from '../../structure/store/messageStatus';
 import { MessageStore } from '../../structure/store/messageStore';
 
 export default class LinkCommand extends Command {
@@ -38,11 +39,9 @@ export default class LinkCommand extends Command {
 		);
 
 		messageStore.getMessageStoreForUser(async _msg => {
-			if (_msg) {
-				const fetchedMessage = await messageStore.fetchMessageFromMessageStore();
-				if (fetchedMessage)
-					fetchedMessage.edit(':x: Could not authorize.', { embed: null });
-			}
+			if (_msg) 
+				await messageStore.updateMessageFromMessageStore(MessageStatus.ERROR);
+				
 			messageStore.setMessageStoreForUser({
 				channel: outputMessage.channel.id,
 				id: outputMessage.id,
