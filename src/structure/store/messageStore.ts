@@ -31,14 +31,16 @@ export class MessageStore {
 		});
 	}
 
-	async setMessageStoreForUser(msg: StoredMessage) {
-		this.redisClient.set(`messageStore-${this.user.id}`, JSON.stringify(msg));
+	setMessageStoreForUser(msg: StoredMessage | null) {
+		if (msg)
+			this.redisClient.set(`messageStore-${this.user.id}`, JSON.stringify(msg));
+		else this.redisClient.del(`messageStore-${this.user.id}`);
 	}
 
 	async fetchMessageFromMessageStore() {
 		let msg: Message | null = null;
-		const _msg: StoredMessage | null = await new Promise((resolve) => {
-			this.getMessageStoreForUser((storedMessage) => {
+		const _msg: StoredMessage | null = await new Promise(resolve => {
+			this.getMessageStoreForUser(storedMessage => {
 				resolve(storedMessage);
 			});
 		});
@@ -64,9 +66,10 @@ export class MessageStore {
 				statusText = ':white_check_mark: successfully authorized user';
 				break;
 			default:
-				statusText = ':x: Why the fuck did you update me?'
+				statusText = ':x: Why the fuck did you update me?';
 				break;
 		}
 		await msg.edit(statusText, { embed: null });
+		this.setMessageStoreForUser(null);
 	}
 }
