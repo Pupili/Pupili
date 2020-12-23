@@ -32,6 +32,7 @@ export class GoogleAuthorization {
 	generateAuthorizationURL(user: User) {
 		return `${this.buildOAuth2ClientFromOpts().generateAuthUrl({
 			access_type: 'offline',
+			prompt: 'consent',
 			scope: GOOGLE_API_SCOPES,
 			redirect_uri: `${this.oAuth2Options.redirects[0]}`,
 			state: user.id,
@@ -51,10 +52,16 @@ export class GoogleAuthorization {
 	async authorizeUser(user: User, authCode: string) {
 		const oAuth2Client = this.buildOAuth2ClientFromOpts();
 		const token = await oAuth2Client.getToken(authCode);
-		console.log(token);
 		oAuth2Client.setCredentials(token.tokens);
+		const userinfo = await google.oauth2('v2').userinfo.get({
+			auth: oAuth2Client
+		});
 		const doc = await UserModel.create({
 			userId: user.id,
+			googleUserInfo: {
+				email: userinfo.data.email!,
+				avatarUrl: userinfo.data.picture!
+			},
 			authCredentials: token.tokens,
 		});
 		await doc.save();

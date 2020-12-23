@@ -7,6 +7,12 @@ export class User {
 	public userId!: string;
 
 	@prop({ required: true })
+	public googleUserInfo!: {
+		email: string;
+		avatarUrl: string;
+	}
+
+	@prop({ required: true })
 	public authCredentials!: Auth.Credentials;
 
 	static async findUserByID(this: ModelType<User>, id: string) {
