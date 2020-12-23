@@ -14,6 +14,6 @@ router.get('/', async (req, res) => {
 			return res.status(401).json({ ok: false, error: 'COULD_NOT_AUTHORIZE' });
 		})
 		.then(() => {
-			return res.status(200).json({ ok: true });
+			return res.send('Successfully authorized, please close this window.');
 		});
 });
