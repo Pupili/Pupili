@@ -5,6 +5,8 @@ import { PupiliClient } from '../../../client/pupiliClient';
 import { PupiliClientOptions } from '../../../client/pupiliClientOptions';
 import { UserModel } from '../../../model/user';
 import { GOOGLE_API_SCOPES } from '../../../util/constants';
+import { MessageStatus } from '../../store/messageStatus';
+import { MessageStore } from '../../store/messageStore';
 
 export class GoogleAuthorization {
 	client: PupiliClient;
@@ -54,19 +56,30 @@ export class GoogleAuthorization {
 		const token = await oAuth2Client.getToken(authCode);
 		oAuth2Client.setCredentials(token.tokens);
 		const userinfo = await google.oauth2('v2').userinfo.get({
-			auth: oAuth2Client
+			auth: oAuth2Client,
 		});
-		const doc = await UserModel.create({
-			userId: user.id,
-			googleUserInfo: {
-				email: userinfo.data.email!,
-				avatarUrl: userinfo.data.picture!
-			},
-			authCredentials: token.tokens,
-		});
-		await doc.save();
-		await this.client.oAuthRefreshScheduler.refreshScheduler();
-		this.redisClient.publish('auth', user.id);
+		const emailUser = await UserModel.findUserByEmail(userinfo.data.email!);
+		if (emailUser) {
+			const messageStore = new MessageStore(
+				this.client,
+				this.redisClient,
+				user
+			);
+			await messageStore.updateMessageFromMessageStore(MessageStatus.ERROR);
+			throw new Error('EMAIL_ALREADY_EXISTS');
+		} else {
+			const doc = await UserModel.create({
+				userId: user.id,
+				googleUserInfo: {
+					email: userinfo.data.email!,
+					avatarUrl: userinfo.data.picture!,
+				},
+				authCredentials: token.tokens,
+			});
+			await doc.save();
+			await this.client.oAuthRefreshScheduler.refreshScheduler();
+			this.redisClient.publish('auth', user.id);
+		}
 	}
 
 	async unauthorizeUser(user: User) {
@@ -75,10 +88,9 @@ export class GoogleAuthorization {
 			throw new Error('Could not get auth credentials for user');
 		const oAuth2Client = this.buildOAuth2ClientFromOpts();
 		oAuth2Client.setCredentials(dbUser.authCredentials);
-		await oAuth2Client.revokeCredentials()
-			.catch((err) => {
-				console.log(`Could not revoke access token, removing anyways... ${err}`);
-			});
+		await oAuth2Client.revokeCredentials().catch(err => {
+			console.log(`Could not revoke access token, removing anyways... ${err}`);
+		});
 		await dbUser.remove();
 		await this.client.oAuthRefreshScheduler.refreshScheduler();
 	}

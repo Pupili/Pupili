@@ -21,6 +21,10 @@ export class User {
 	@prop({ required: true })
 	public authCredentials!: Auth.Credentials;
 
+	static async findUserByEmail(this: ModelType<User>, email: string) {
+		return await this.findOne({ 'googleUserInfo.email': email }).exec();
+	}
+
 	static async findUserByID(this: ModelType<User>, id: string) {
 		return await this.findOne({ userId: id }).exec();
 	}

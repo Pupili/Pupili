@@ -3,6 +3,7 @@ import { RedisClient } from 'redis';
 import { PupiliClient } from '../../client/pupiliClient';
 import { TextChannel } from 'discord.js';
 import { Message } from 'discord.js';
+import { MessageStatus } from './messageStatus';
 
 interface StoredMessage {
 	channel: string;
@@ -49,5 +50,23 @@ export class MessageStore {
 			msg = fetchedMessage;
 		}
 		return msg;
+	}
+
+	async updateMessageFromMessageStore(status: MessageStatus) {
+		const msg = await this.fetchMessageFromMessageStore();
+		if (!msg) return;
+		let statusText: string;
+		switch (status) {
+			case MessageStatus.ERROR:
+				statusText = ':x: Could not authorize user.';
+				break;
+			case MessageStatus.SUCCESS:
+				statusText = ':white_check_mark: successfully authorized user';
+				break;
+			default:
+				statusText = ':x: Why the fuck did you update me?'
+				break;
+		}
+		await msg.edit(statusText, { embed: null });
 	}
 }
