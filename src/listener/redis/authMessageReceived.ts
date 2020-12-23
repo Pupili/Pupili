@@ -1,4 +1,5 @@
 import { Listener } from 'discord-akairo';
+import { MessageStatus } from '../../structure/store/messageStatus';
 import { MessageStore } from '../../structure/store/messageStore';
 
 export default class AuthMessagedReceivedListener extends Listener {
@@ -21,11 +22,7 @@ export default class AuthMessagedReceivedListener extends Listener {
 					throw new Error(
 						`Received message from auth channel, however couldn't get message store`
 					);
-				const fetchedMessage = await messageStore.fetchMessageFromMessageStore();
-				if (fetchedMessage)
-					fetchedMessage.edit(':white_check_mark: successfully authorized', {
-						embed: null,
-					});
+				await messageStore.updateMessageFromMessageStore(MessageStatus.SUCCESS);
 			});
 		}
 	}
