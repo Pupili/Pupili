@@ -1,7 +1,13 @@
-import { getModelForClass, prop } from '@typegoose/typegoose';
+import {
+	getModelForClass,
+	modelOptions,
+	prop,
+	Severity,
+} from '@typegoose/typegoose';
 import { ModelType } from '@typegoose/typegoose/lib/types';
 import { Auth } from 'googleapis';
 
+@modelOptions({ options: { allowMixed: Severity.ALLOW } })
 export class User {
 	@prop({ required: true })
 	public userId!: string;
@@ -10,7 +16,7 @@ export class User {
 	public googleUserInfo!: {
 		email: string;
 		avatarUrl: string;
-	}
+	};
 
 	@prop({ required: true })
 	public authCredentials!: Auth.Credentials;
