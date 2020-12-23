@@ -4,6 +4,7 @@ import { Message } from 'discord.js';
 import { UserModel } from '../../model/user';
 import { MessageStatus } from '../../structure/store/messageStatus';
 import { MessageStore } from '../../structure/store/messageStore';
+import { ONE_MINUTE_MS } from '../../util/constants';
 
 export default class LinkCommand extends Command {
 	constructor() {
@@ -39,13 +40,17 @@ export default class LinkCommand extends Command {
 		);
 
 		messageStore.getMessageStoreForUser(async _msg => {
-			if (_msg) 
+			if (_msg)
 				await messageStore.updateMessageFromMessageStore(MessageStatus.ERROR);
-				
+
 			messageStore.setMessageStoreForUser({
 				channel: outputMessage.channel.id,
 				id: outputMessage.id,
 			});
+
+			setTimeout(async () => {
+				await messageStore.updateMessageFromMessageStore(MessageStatus.ERROR);
+			}, ONE_MINUTE_MS);
 		});
 	}
 }
