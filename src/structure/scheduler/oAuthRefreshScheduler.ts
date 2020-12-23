@@ -32,19 +32,22 @@ export class OAuthRefreshScheduler {
 		const oAuth2Client = this.googleAuthorization.buildOAuth2ClientFromOpts();
 		console.log(`Refreshing token for ${u.userId}...`);
 		oAuth2Client.setCredentials({
-			refresh_token: u.authCredentials.refresh_token
+			refresh_token: u.authCredentials.refresh_token,
 		});
-		oAuth2Client.refreshAccessToken(
-			async (err, tokens) => {
-				if (err || !tokens)
-					throw new Error(
-						`Error while refreshing access token for user ${u.userId} - ${err}`
-					);
-				await u.updateOne({
-					authCredentials: tokens,
-				});
-				this.refreshScheduler();
+		oAuth2Client.refreshAccessToken(async (err, tokens) => {
+			if (err || !tokens) {
+				await u.remove();
+				console.log(
+					`Removed user with id ${u.userId} and email ${u.googleUserInfo.email} from database`
+				);
+				throw new Error(
+					`Error while refreshing access token for user ${u.userId} - ${err}`
+				);
 			}
-		);
+			await u.updateOne({
+				authCredentials: tokens,
+			});
+			this.refreshScheduler();
+		});
 	}
 }
